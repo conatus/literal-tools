@@ -1,6 +1,6 @@
 # literal-tools
 
-A tool for interacting with the Literal.club GraphQL API.
+A tool for interacting with the Literal GraphQL API.
 
 ## Installation
 
