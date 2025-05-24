@@ -90,7 +90,6 @@ def get_token():
     token = login_data["data"]["login"]["token"]
     profile_id = login_data["data"]["login"]["profile"]["id"]
     
-    # Save token and profile_id
     try:
         with open(TOKEN_FILE, "w") as f:
             json.dump({"token": token, "profile_id": profile_id}, f)
@@ -100,7 +99,6 @@ def get_token():
 
     return token, profile_id
 
-# Get token and profile_id (either from file or by logging in)
 token, profile_id = get_token()
 
 # Query for currently reading books
