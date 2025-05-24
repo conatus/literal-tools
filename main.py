@@ -9,6 +9,10 @@ url = "https://literal.club/graphql/"
 TOKEN_FILE = Path.home() / ".literal_token"
 DEBUG = "--debug" in sys.argv
 
+# ANSI escape codes
+ITALIC = "\033[3m"
+RESET = "\033[0m"
+
 def debug_print(*args, **kwargs):
     if DEBUG:
         print(*args, **kwargs)
@@ -149,7 +153,7 @@ if response.status_code == 200:
                 authors = ", ".join(author['name'] for author in book['authors']) if book['authors'] else "Unknown Author"
                 title = book['title']
                 subtitle = f": {book['subtitle']}" if book.get('subtitle') else ""
-                print(f"{authors} - {title}{subtitle}")
+                print(f"{authors} - {ITALIC}{title}{subtitle}{RESET}")
         else:
             print("Not currently reading any books")
 else:
