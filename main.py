@@ -3,22 +3,28 @@ import os
 import json
 from pathlib import Path
 import getpass
+import sys
 
 url = "https://literal.club/graphql/"
 TOKEN_FILE = Path.home() / ".literal_token"
+DEBUG = "--debug" in sys.argv
+
+def debug_print(*args, **kwargs):
+    if DEBUG:
+        print(*args, **kwargs)
 
 def get_token():
     # Try to load existing token
     if TOKEN_FILE.exists():
-        print("Token file exists")
+        debug_print("Token file exists")
         try:
             with open(TOKEN_FILE) as f:
                 token_data = json.load(f)
                 token = token_data.get("token")
+                profile_id = token_data.get("profile_id")
 
-                print("Beginning token verification")
-                if token:
-                    # Verify token is still valid with a simple query
+                debug_print("Beginning token verification")
+                if token and profile_id:
                     headers = {
                         "Authorization": f"Bearer {token}",
                         "Content-Type": "application/json"
@@ -34,18 +40,17 @@ def get_token():
                     }
                     response = requests.post(url, json=test_query, headers=headers)
                     if response.status_code == 200:
-                        print("Token is valid")
-                        return token
+                        debug_print("Token is valid")
+                        return token, profile_id
                     else:
-                        print("Token is invalid")
-                        print("Response:", response.text)
-                        exit(1)
+                        debug_print("Token is invalid")
+                        debug_print("Response:", response.text)
+                        debug_print("Attempting to login")
                 else:
-                    print("No token found")
+                    debug_print("No token or profile_id found")
         except Exception as e:
-            print(f"Error reading token file: {e}")
+            debug_print(f"Error reading token file: {e}")
 
-    # If we get here, we need to login
     print("Please login to Literal.club")
     email = input("Email: ")
     password = getpass.getpass("Password: ")
@@ -55,14 +60,8 @@ def get_token():
         mutation login($email: String!, $password: String!) {
           login(email: $email, password: $password) {
             token
-            email
-            languages
             profile {
               id
-              handle
-              name
-              bio
-              image
             }
           }
         }
@@ -85,33 +84,51 @@ def get_token():
         exit(1)
 
     token = login_data["data"]["login"]["token"]
+    profile_id = login_data["data"]["login"]["profile"]["id"]
     
-    # Save token
+    # Save token and profile_id
     try:
         with open(TOKEN_FILE, "w") as f:
-            json.dump({"token": token}, f)
+            json.dump({"token": token, "profile_id": profile_id}, f)
         os.chmod(TOKEN_FILE, 0o600)  # Make file readable only by owner
     except Exception as e:
-        print(f"Warning: Could not save token: {e}")
+        debug_print(f"Warning: Could not save token: {e}")
 
-    return token
+    return token, profile_id
 
-# Get token (either from file or by logging in)
-token = get_token()
+# Get token and profile_id (either from file or by logging in)
+token, profile_id = get_token()
 
-# Now make the introspection query with the token
-introspection_query = {
+# Query for currently reading books
+reading_books_query = {
     "query": """
-    {
-      __schema {
-        mutationType {
-          fields {
-            name
-          }
+    query booksByReadingStateAndProfile(
+      $limit: Int!
+      $offset: Int!
+      $readingStatus: ReadingStatus!
+      $profileId: String!
+    ) {
+      booksByReadingStateAndProfile(
+        limit: $limit
+        offset: $offset
+        readingStatus: $readingStatus
+        profileId: $profileId
+      ) {
+        title
+        subtitle
+        authors {
+          id
+          name
         }
       }
     }
-    """
+    """,
+    "variables": {
+        "limit": 10,
+        "offset": 0,
+        "readingStatus": "IS_READING",
+        "profileId": profile_id
+    }
 }
 
 headers = {
@@ -119,14 +136,22 @@ headers = {
     "Content-Type": "application/json"
 }
 
-response = requests.post(url, json=introspection_query, headers=headers)
+response = requests.post(url, json=reading_books_query, headers=headers)
 
 if response.status_code == 200:
     data = response.json()
-    mutations = data["data"]["__schema"]["mutationType"]["fields"]
-    print("Available mutations:")
-    for mutation in mutations:
-        print(f"- {mutation['name']}")
+    if "errors" in data:
+        print("Error fetching reading states:", data["errors"])
+    else:
+        books = data["data"]["booksByReadingStateAndProfile"]
+        if books:
+            for book in books:
+                authors = ", ".join(author['name'] for author in book['authors']) if book['authors'] else "Unknown Author"
+                title = book['title']
+                subtitle = f": {book['subtitle']}" if book.get('subtitle') else ""
+                print(f"{authors} - {title}{subtitle}")
+        else:
+            print("Not currently reading any books")
 else:
     print(f"Request failed with status code {response.status_code}")
     print("Response:", response.text)
