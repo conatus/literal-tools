@@ -1,0 +1,22 @@
+[project]
+name = "literal-tools"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "Alex Worrad-Andrews", email = "alex@alexandrews.info" }
+]
+dependencies = [
+    "requests>=2.32.3",
+]
+readme = "README.md"
+requires-python = ">= 3.8"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/literal_tools"]
