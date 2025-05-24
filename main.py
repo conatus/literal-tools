@@ -293,8 +293,7 @@ def get_book_data_interactive():
     book_data["title"] = input("Title: ").strip()
     book_data["description"] = input("Description: ").strip()
     book_data["authors"] = input("Authors (comma-separated): ").strip()
-    language = input("Language code (e.g., 'en', press Enter for 'en'): ").strip()
-    book_data["language"] = language if language else "en"
+    book_data["language"] = input("Language code (e.g., 'en', press Enter for 'en'): ").strip() or "en"
     book_data["publishedDate"] = input("Publication date (YYYY-MM-DD): ").strip()
     book_data["publisher"] = input("Publisher: ").strip()
     
