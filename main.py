@@ -314,8 +314,8 @@ def get_book_data_interactive():
     if page_count:
         book_data["pageCount"] = page_count
     
-    mature = input("Is this book mature content? (y/n, default: n): ").strip().lower()
-    book_data["mature"] = mature == 'y'
+    mature = input("Is this book mature content? (true/false, default: false): ").strip().lower()
+    book_data["mature"] = mature == 'true'
     
     physical_format = input("Physical format (e.g., 'paperback', 'hardcover', press Enter to skip): ").strip()
     if physical_format:
