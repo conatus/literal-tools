@@ -55,7 +55,7 @@ def get_token():
         except Exception as e:
             debug_print(f"Error reading token file: {e}")
 
-    print("Please login to Literal.club")
+    print("Please login to Literal")
     email = input("Email: ")
     password = getpass.getpass("Password: ")
 
